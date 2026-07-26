@@ -1,21 +1,16 @@
-const timestamps = [];
+let hits = 0;
+let rps = 0;
 
-export function hit() {
-    const now = Date.now();
+setInterval(() => {
+    rps = hits;
+    hits = 0;
+}, 1000);
 
-    timestamps.push(now);
-
-    while (timestamps.length && now - timestamps[0] >= 1000) {
-        timestamps.shift();
-    }
+export function addHit() {
+    hits++;
+    return rps;
 }
 
 export function getRPS() {
-    const now = Date.now();
-
-    while (timestamps.length && now - timestamps[0] >= 1000) {
-        timestamps.shift();
-    }
-
-    return timestamps.length;
+    return rps;
 }
