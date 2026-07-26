@@ -1,112 +1,160 @@
-import { getRPS } from "./counter.js";
-
 export default function handler(req, res) {
     res.setHeader("Content-Type", "text/html");
 
     res.end(`
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <title>son</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
 body{
     background:#111827;
     color:#fff;
+    font-family:Arial,Helvetica,sans-serif;
     display:flex;
-    flex-direction:column;
     justify-content:center;
     align-items:center;
     min-height:100vh;
-    font-family:Arial;
-    margin:0;
-    padding:20px 0;
-    box-sizing:border-box;
 }
-#rps{
-    font-size:90px;
-    color:#22c55e;
-    font-weight:bold;
-}
-#chart-wrap{
-    width:80vw;
+
+.container{
+    width:90%;
     max-width:900px;
-    height:300px;
-    margin-top:30px;
+}
+
+h1{
+    text-align:center;
+    margin-bottom:15px;
+}
+
+#rps{
+    text-align:center;
+    font-size:90px;
+    font-weight:bold;
+    color:#22c55e;
+    margin-bottom:30px;
+}
+
+.chart-box{
+    background:#1f2937;
+    padding:20px;
+    border-radius:12px;
+}
+
+canvas{
+    width:100%!important;
+    height:350px!important;
 }
 </style>
+
 </head>
 
 <body>
 
-<div align="center">
+<div class="container">
+
 <h1>Request Per Second</h1>
+
 <div id="rps">0</div>
+
+<div class="chart-box">
+    <canvas id="chart"></canvas>
 </div>
 
-<div id="chart-wrap">
-<canvas id="rpsChart"></canvas>
 </div>
 
 <script>
-const WINDOW_SECONDS = 60; // show last 60 seconds / 1 minute
 
-// pre-fill with 60 empty points so the chart starts full-width
-const labels = Array.from({ length: WINDOW_SECONDS }, (_, i) => -(WINDOW_SECONDS - i));
-const dataPoints = Array(WINDOW_SECONDS).fill(0);
+const history = [];
 
-const ctx = document.getElementById("rpsChart").getContext("2d");
-const chart = new Chart(ctx, {
-    type: "line",
-    data: {
-        labels,
-        datasets: [{
-            label: "RPS",
-            data: dataPoints,
-            borderColor: "#22c55e",
-            backgroundColor: "rgba(34, 197, 94, 0.15)",
-            borderWidth: 2,
-            fill: true,
-            tension: 0.3,
-            pointRadius: 0,
-        }],
+const ctx = document.getElementById("chart");
+
+const chart = new Chart(ctx,{
+    type:"line",
+    data:{
+        labels:[],
+        datasets:[{
+            label:"RPS",
+            data:[],
+            borderColor:"#22c55e",
+            backgroundColor:"rgba(34,197,94,.15)",
+            fill:true,
+            tension:.35,
+            pointRadius:0
+        }]
     },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        scales: {
-            x: {
-                title: { display: true, text: "seconds ago", color: "#9ca3af" },
-                ticks: { color: "#9ca3af" },
-                grid: { color: "#1f2937" },
-            },
-            y: {
-                beginAtZero: true,
-                ticks: { color: "#9ca3af" },
-                grid: { color: "#1f2937" },
-            },
+    options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        animation:false,
+        plugins:{
+            legend:{
+                labels:{
+                    color:"#fff"
+                }
+            }
         },
-        plugins: {
-            legend: { display: false },
-        },
-    },
+        scales:{
+            x:{
+                ticks:{
+                    color:"#aaa"
+                },
+                grid:{
+                    color:"#374151"
+                }
+            },
+            y:{
+                beginAtZero:true,
+                ticks:{
+                    color:"#aaa"
+                },
+                grid:{
+                    color:"#374151"
+                }
+            }
+        }
+    }
 });
 
-async function update() {
-    const data = await fetch("/hit").then(r => r.json());
-    document.getElementById("rps").textContent = data.rps;
+async function update(){
 
-    // roll the 60-second window
-    chart.data.datasets[0].data.push(data.rps);
-    chart.data.datasets[0].data.shift();
-    chart.update();
+    try{
+
+        const data = await fetch("/hit",{cache:"no-store"}).then(r=>r.json());
+
+        document.getElementById("rps").textContent=data.rps;
+
+        history.push(data.rps);
+
+        if(history.length>60)
+            history.shift();
+
+        chart.data.labels = history.map((_,i)=>i+1);
+
+        chart.data.datasets[0].data = history;
+
+        chart.update("none");
+
+    }catch(e){
+        console.log(e);
+    }
+
 }
 
 update();
-setInterval(update, 1000); // still hits /hit once per second
+
+setInterval(update,1000);
+
 </script>
 
 </body>
