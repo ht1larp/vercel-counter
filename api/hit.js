@@ -1,9 +1,9 @@
-import { hit } from "./counter.js";
+import { addHit } from "./counter.js";
 
 export default function handler(req, res) {
-    hit();
+    const rps = addHit();
 
     res.json({
-        ok: true
+        rps
     });
 }
