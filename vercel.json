@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/hit",
+      "destination": "/api/hit"
+    },
+    {
+      "source": "/dash",
+      "destination": "/api/dash"
+    },
+    {
+      "source": "/rps",
+      "destination": "/api/rps"
+    }
+  ]
+}
